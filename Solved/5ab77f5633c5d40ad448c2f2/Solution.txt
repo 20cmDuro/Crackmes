@@ -1,0 +1,82 @@
+  _        
+ | \ o ._  
+ |_/ | | | 
+           
+
+Tools: x32dbg
+
+First load the file and search for String References.
+
+	00401000 push crackme.406200 "#1000"
+	00401092 push crackme.406200 "#1000"
+	0040114D push crackme.406306 "Bad boy..."
+	00401152 push crackme.40620A "Username must have at least 4 chars..."
+	004012C0 push crackme.4062DB "Good boy..."
+	004012C5 push crackme.4062AC "Yep, thats the right code!\n\rGo write a keygen!"
+	004012D6 push crackme.406306 "Bad boy..."
+	004012DB push crackme.4062E7 "Nope, thats not it!\n\rTry again"
+	00401350 push crackme.4062A3 "About..."
+	00401355 push crackme.406231 "Coded by LaFarge / BiW\n\rProtection: Custom\n\r\n\rAppName: CrackMe #2\n\rOS: WinALL\n\rDate: 1/1/2005\n\r\n\r(c) LaFarge 2005"
+
+"Yep, thats the right code!\n\rGo write a keygen!", bingo!
+Lets follow this string on disassembler.
+
+00401278 | 8A88 48654000            | mov cl,byte ptr ds:[eax+406548]         |
+0040127E | 888B 49674000            | mov byte ptr ds:[ebx+406749],cl         |
+00401284 | 43                       | inc ebx                                 |
+00401285 | 48                       | dec eax                                 |
+00401286 | 75 F0                    | jne crackme.401278                      |
+00401288 | 68 49674000              | push crackme.406749                     |
+0040128D | 68 49654000              | push crackme.406549                     |
+00401292 | E8 5F010000              | call <JMP.&lstrcpyA>                    |
+00401297 | 68 00020000              | push 200                                |
+0040129C | 68 49694000              | push crackme.406949                     |
+004012A1 | 6A 64                    | push 64                                 |
+004012A3 | FF75 08                  | push dword ptr ss:[ebp+8]               |
+004012A6 | E8 E5000000              | call <JMP.&GetDlgItemTextA>             |
+004012AB | 68 49654000              | push crackme.406549                     |
+004012B0 | 68 49694000              | push crackme.406949                     |
+004012B5 | E8 36010000              | call <JMP.&lstrcmpA>                    |
+004012BA | 0BC0                     | or eax,eax                              |
+004012BC | 75 16                    | jne crackme.4012D4                      |
+004012BE | 6A 40                    | push 40                                 |
+004012C0 | 68 DB624000              | push crackme.4062DB                     | "Key"
+004012C5 | 68 AC624000              | push crackme.4062AC                     | 4062AC:"Yep, thats the right code!\n\rGo write a keygen!"
+004012CA | FF75 08                  | push dword ptr ss:[ebp+8]               |
+004012CD | E8 CA000000              | call crackme.40139C                     |
+004012D2 | EB 14                    | jmp crackme.4012E8                      |
+004012D4 | 6A 10                    | push 10                                 |
+004012D6 | 68 06634000              | push crackme.406306                     | 406306:"Bad boy..."
+004012DB | 68 E7624000              | push crackme.4062E7                     | 4062E7:"Nope, thats not it!\n\rTry again"
+004012E0 | FF75 08                  | push dword ptr ss:[ebp+8]               |
+004012E8 | 68 00020000              | push 200                                |
+
+Here we can see an if statement, it checks if "crackme.406549" == "crackme.406949"
+
+004012AB | 68 49654000              | push crackme.406549                     |
+004012B0 | 68 49694000              | push crackme.406949                     |
+004012B5 | E8 36010000              | call <JMP.&lstrcmpA>                    |
+
+We can now change the 'jne' instruction to 'jmp' so it will always jump to "crackme.4012D4" (the correct key)
+
+004012BC | 75 16                    | jne crackme.4012D4                      |
+to
+004012BC | 75 16                    | jmp crackme.4012D4                      |
+
+And we are done, we've cracked this program, but oh... wait... we still need to make a keygen!
+Now this will be pretty easy, we only need to change the message.
+
+So we only need to change this message to the key
+
+004012C5 | 68 AC624000              | push crackme.4062AC                     | 4062AC:"Yep, thats the right code!\n\rGo write a keygen!"
+
+and the key is one of those:
+004012AB | 68 49654000              | push crackme.406549                     |
+004012B0 | 68 49694000              | push crackme.406949                     |
+
+So... lets try the first one
+004012C5 | 68 AC624000              | push crackme.4062AC                     | 4062AC:"Yep, thats the right code!\n\rGo write a keygen!"
+to
+004012C5 | 68 AC624000              | push crackme.406549                     |
+
+And... bingo! First try, the key will be on the message!
